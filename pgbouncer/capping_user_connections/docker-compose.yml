@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database server
+  postgres:
+    image: postgres:16
+    container_name: pgbouncer_postgres_cap
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pgbouncer_network
+
+  # PgBouncer connection pooler
+  pgbouncer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pgbouncer_cap
+    # DNS servers to help with package resolution during build
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - ./config:/etc/pgbouncer:ro
+      - ./scripts:/scripts:ro
+      - pgbouncer_logs:/var/log/pgbouncer
+    ports:
+      - "6432:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pgbouncer_network
+    healthcheck:
+      test: ["CMD-SHELL", "psql -h localhost -p 6432 -U admin -d postgres -c 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  pgbouncer_logs:
+
+networks:
+  pgbouncer_network:
+    driver: bridge
