@@ -220,6 +220,51 @@ docker exec pgbouncer_multi psql -h localhost -p 50002 -U pgbouncer -d pgbouncer
 
 ## Troubleshooting
 
+### DNS Resolution Errors During Build
+
+If you see errors like `Temporary failure resolving 'deb.debian.org'` during `docker build`:
+
+**Quick Fix - Build with Host Network:**
+```bash
+docker build --network=host -t multiple_instances_example-pgbouncer .
+docker-compose up -d
+```
+
+**Permanent Fix - Configure Docker Daemon DNS:**
+
+1. Edit Docker daemon configuration:
+```bash
+sudo mkdir -p /etc/docker
+sudo nano /etc/docker/daemon.json
+```
+
+2. Add or merge this content:
+```json
+{
+  "dns": ["8.8.8.8", "8.8.4.4", "1.1.1.1"]
+}
+```
+
+3. Restart Docker:
+```bash
+sudo systemctl restart docker
+```
+
+4. Try building again:
+```bash
+make build
+```
+
+**Verify Host DNS:**
+```bash
+cat /etc/resolv.conf
+nslookup deb.debian.org
+```
+
+If your host system cannot resolve DNS, fix that first. Docker inherits DNS settings from the host system.
+
+**Note:** The `dns` setting in docker-compose.yml only applies to running containers, not the build process. That's why you need to configure the Docker daemon for build-time DNS resolution.
+
 ### Instances Not Starting
 
 Check systemd journal logs:
@@ -249,6 +294,21 @@ make logs-pgbouncer
 3. Verify network connectivity:
 ```bash
 docker exec pgbouncer_multi ping postgres
+```
+
+### Package Installation Errors
+
+If you see errors like `E: Unable to locate package pgbouncer`:
+
+1. The Dockerfile is configured to add the PostgreSQL APT repository which contains pgbouncer
+2. Ensure the repository addition steps complete successfully in the build output
+3. If behind a corporate proxy, you may need to configure Docker to use it:
+```bash
+# Add to /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://proxy.example.com:80"
+Environment="HTTPS_PROXY=http://proxy.example.com:80"
+Environment="NO_PROXY=localhost,127.0.0.1"
 ```
 
 ## Performance Considerations

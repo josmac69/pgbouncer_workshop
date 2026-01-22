@@ -28,6 +28,10 @@ services:
       dockerfile: Dockerfile
     container_name: pgbouncer_multi
     privileged: true
+    # DNS servers to help with package resolution during build
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     # Required for systemd
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw

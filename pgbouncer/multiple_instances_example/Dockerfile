@@ -3,15 +3,23 @@ FROM debian:bookworm-slim
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install systemd, pgbouncer, postgresql-client, and utilities
+# Install dependencies and add PostgreSQL APT repository
 RUN apt-get update && apt-get install -y \
+	gnupg \
+	wget \
+	lsb-release \
+	&& wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+	&& echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+	&& apt-get update
+
+# Install systemd, pgbouncer, postgresql-client, and utilities
+RUN apt-get install -y \
 	systemd \
 	systemd-sysv \
 	pgbouncer \
 	postgresql-client \
 	procps \
 	net-tools \
-	curl \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
