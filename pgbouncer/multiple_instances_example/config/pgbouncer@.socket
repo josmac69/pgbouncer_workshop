@@ -1,0 +1,18 @@
+[Unit]
+Description=PgBouncer connection pooler sockets
+
+[Socket]
+# Main TCP/IP port for production traffic
+ListenStream=6432
+
+# Per-instance TCP/IP port for administration (using template parameter %i)
+ListenStream=%i
+
+# Per-instance Unix-domain socket for administration
+ListenStream=/tmp/.s.PGSQL.%i
+
+# Enable SO_REUSEPORT to allow multiple instances to share port 6432
+ReusePort=true
+
+[Install]
+WantedBy=sockets.target

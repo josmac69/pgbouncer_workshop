@@ -1,0 +1,28 @@
+[Unit]
+Description=PgBouncer connection pooler for PostgreSQL (instance %i)
+After=network.target
+Requires=pgbouncer@%i.socket
+
+[Service]
+Type=notify
+User=postgres
+
+# Start PgBouncer with configuration file
+ExecStart=/usr/bin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+
+# Reload configuration on SIGHUP
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Use SIGINT for graceful shutdown
+KillSignal=SIGINT
+
+# Restart on failure
+Restart=on-failure
+RestartSec=5s
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

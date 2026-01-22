@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database server
+  postgres:
+    image: postgres:16
+    container_name: pgbouncer_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pgbouncer_network
+
+  # PgBouncer with multiple instances using systemd
+  pgbouncer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pgbouncer_multi
+    privileged: true
+    # Required for systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - ./config:/etc/pgbouncer:ro
+    ports:
+      # Main PgBouncer port (shared by all instances)
+      - "6432:6432"
+      # Admin ports for each instance
+      - "50001:50001"
+      - "50002:50002"
+      - "50003:50003"
+      - "50004:50004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pgbouncer_network
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
+
+volumes:
+  postgres_data:
+
+networks:
+  pgbouncer_network:
+    driver: bridge

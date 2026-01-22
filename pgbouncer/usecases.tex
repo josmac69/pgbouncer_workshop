@@ -1,0 +1,582 @@
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Use Case: Dedicated PgBouncer per Tenant/Team}
+
+% \vspace{-10px}
+\begin{itemize}
+\item Each tenant/team has its own PgBouncer instance
+\item Isolates authentication and workloads between tenants/teams
+\item Simplifies setting limits per tenant
+\item Each tenant/team has its own pgbouncer.ini and userlist.txt files
+\item Allows usage of specific per tenant/team users for database connections
+\item Prevents some types of noisy neighbor issues between tenants/teams
+\item Simplifies user management - one huge pg_hba.conf not needed
+
+\bigskip
+\fontsize{7}{7}\selectfont
+\item \href{https://engineering.adjust.com/post/pgbouncer_authentication_layer/}{\color{blue}{Introducing a PgBouncer authentication layer into our database architecture}}
+\end{itemize}
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Use Case: One PgBouncer Proxying Multiple Databases}
+% \vspace{-10px}
+\begin{itemize}
+\item One PgBouncer instance can proxy connections to multiple databases
+\item Simplifies connection management for applications
+\item Allows for shared connection pooling across databases
+\item Useful for applications with many small databases with low traffic
+\item Reduces resource consumption compared to multiple PgBouncer instances
+\item Require user mapping per database to avoid conflicts in user names
+\item postgres1 = postgres/database1, postgres2 = postgres/database2, ...
+
+% \fontsize{7}{7}\selectfont
+% \item \href{}{\color{blue}{}}
+\end{itemize}
+% \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Use Case: Serverless Applications}
+% \vspace{-10px}
+\begin{itemize}
+\item Serverless applications often have unpredictable connection patterns
+\item Can produce connection spikes that overwhelm PostgreSQL server
+\item PgBouncer can smooth out connection spikes with pooling and queuing
+\item Reduces connection overhead for short-lived serverless functions
+\item Improves overall application responsiveness and stability
+\item Deploy PgBouncer as a lightweight service in the database network
+\item Configure serverless functions to connect via PgBouncer port
+
+\bigskip
+\fontsize{7}{7}\selectfont
+\item \href{https://medium.com/@mcnc33/serverless-connection-pooling-with-aws-lambda-and-pgbouncer-on-rds-a-step-by-step-guide-f908cab6de4b}{\color{blue}{Serverless Connection Pooling with AWS Lambda and PgBouncer on RDS: A Step-by-Step Guide}}
+\end{itemize}
+
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Use Case: Read/Write Splitter}
+\vspace{-10px}
+\begin{itemize}
+\item Some applications use separate databases for reads and writes
+\item Writes go to primary database, reads from replicas
+\item PgBouncer does not natively support read/write splitting
+\item It does not parse SQL queries to determine type
+\item Split must be done at application level via user names
+\item Solution can further balance reads across replicas using HAProxy
+\end{itemize}
+
+\bigskip
+\hspace{1cm}\includegraphics[width=0.3\textwidth]{logos/read-write-splitter.png}
+
+\bigskip
+\fontsize{7}{7}\selectfont
+\hspace{1cm}\href{https://www.enterprisedb.com/blog/taking-advantage-write-only-and-read-only-connections-pgbouncer-django}{\color{blue}{Taking Advantage of Write-Only and Read-Only Connections in PgBouncer with Django}}
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Use Case: PgBouncer Listening on Multile Ports}
+\vspace{-10px}
+\begin{itemize}
+\item Can happen after consolidation of multiple PostgreSQL servers
+\item One PgBouncer instance can listen on multiple ports
+\item Setting \texttt{listen\_port} allows only one port
+\item But problem can be solved using systemd .socket unit
+\end{itemize}
+
+\begin{lstlisting}[frame=none, numbers=none, language=SQL,
+keepspaces=true, aboveskip=10px,
+basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+	## /etc/systemd/system/pgbouncer.socket
+
+	[Socket]
+	ListenStream=6432
+	ListenStream=6433
+	ListenStream=6434
+	ListenStream=/var/run/postgresql/.s.PGSQL.6432
+\end{lstlisting}
+
+% \bigskip
+\fontsize{7}{7}\selectfont
+\hspace{1cm}\href{https://www.percona.com/blog/configuring-pgbouncer-for-multi-port-access/}{\color{blue}{Configuring PgBouncer for Multi-Port Access}}
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Experimental Use Case: Pooling FDW Connections}
+
+% \vspace{-10px}
+\begin{itemize}
+\item Foreign Data Wrappers (FDW) allow access to external data sources
+\item Each FDW connection creates a new PostgreSQL connection
+\item Can lead to many open connections and resource exhaustion
+\item PgBouncer can be used to pool FDW connections
+\item Configure FDW to connect via PgBouncer port
+\item Reduces number of open connections to external data source
+\end{itemize}
+
+\end{frame}
+
+
+% -----------------------------------------------
+\begin{frame}[fragile]{Experimental Use Case: Capping User Connections}
+
+% \vspace{-10px}
+\begin{itemize}
+\item PgBouncer can limit connections per user/database pair
+\item Prevents a single user from exhausting all connections
+\item Parameters:
+\begin{itemize}
+\item max\_db\_connections limits per database
+\item max\_user\_connections limit per user
+\item max\_user\_client\_connections limit per user over all databases
+\end{itemize}
+\end{itemize}
+
+\end{frame}
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Maintenance - Viewing Connection Pools}
+% % \vspace{-10px}
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+
+% pgbouncer=# SHOW POOLS;
+% -[ RECORD 1 ]---------
+% database   | pgbench
+% user       | pgbouncer
+% cl_active  | 0
+% cl_waiting | 0
+% sv_active  | 0
+% sv_idle    | 0
+% sv_used    | 0
+% sv_tested  | 0
+% sv_login   | 0
+% maxwait    | 0
+% ...
+% \end{lstlisting}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Maintenance - Viewing Statistics}
+% % \vspace{-10px}
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+
+% pgbouncer=# SHOW STATS;
+% -[ RECORD 1 ]----+-----------
+% database         | pgbench
+% total_requests   | 50006
+% total_received   | 3163234
+% total_sent       | 3200411
+% total_query_time | 1821401509
+% avg_req          | 0
+% avg_recv         | 0
+% avg_sent         | 0
+% avg_query        | 0
+% ...
+% \end{lstlisting}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Maintenance - Viewing Client Connections}
+% % \vspace{-10px}
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+
+% pgbouncer=# SHOW CLIENTS;
+% -[ RECORD 1 ]+--------------------
+% type         | C
+% user         | postgres
+% database     | pgbouncer
+% state        | active
+% addr         | unix
+% port         | 6432
+% local_addr   | unix
+% local_port   | 6432
+% connect_time | 2010-06-17 17:14:58
+% request_time | 2010-06-17 17:34:14
+% ptr          | 0x9ff0fc0
+% link         |
+% ...
+% \end{lstlisting}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Development Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Virtual Generated Columns}
+% \item Columns computed on-the-fly from other columns
+% \item VIRTUAL columns are default, STORED must be specified explicitly
+% \item Stored column can be included in logical replication streams
+% \item Virtual columns cannot be indexed or constrained
+
+% \bigskip
+% \item \textbf{Enhanced RETURNING clause}
+% \item INSERT/UPDATE/DELETE/MERGE can access OLD and NEW values
+% \item RETURNING old.*, new.* syntax
+% \item Simplifies auditing, logging, change tracking
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% \includegraphics[width=\textwidth]{logos/DALL-E-2025-04-02-18-24-01-diagnose.jpg}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Development Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.6\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Native UUIDv7 support}
+% \item UUID is generally 16 bytes (128 bits) integer
+% \item Just presented as hexadecimal string
+% \item Function uuidv7() generates timestamp-ordered UUIDs
+% \item Include 12-bit millisecond precision timestamp
+% \item Replacement for random UUIDs and BIGINT IDs
+% \item Improves index locality, reduces B-tree page splits
+% \item But it also creates some security leakage
+% \item Exposes timestamp of creating record
+% \item Exposes time difference between records
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.4\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% \includegraphics[width=\textwidth]{logos/uuidv7.png}
+
+% \begin{imagedesccent}Images from the article\\ \href{https://buildkite.com/resources/blog/goodbye-integers-hello-uuids/}{\color{blue}{Goodbye integers. Hello UUIDv7!}}\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Security and Authentication Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Native OAuth 2.0 authentication}
+% \item Supports OAuth 2.0 token-based authentication
+% \item Works with external identity providers
+% \item Configured via pg\_hba.conf using method "oauth"
+
+% \bigskip
+% \item \textbf{MD5 deprecated \& SCRAM improvements}
+% \item MD5 authentication officially deprecated
+% \item SCRAM-SHA-256 is the recommended replacement
+
+% \bigskip
+% \item \textbf{SCRAM pass-through for postgres\_fdw and dblink}
+% \item No plaintext passwords needed anymore
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Constraints Improvements}
+% % \begin{columns}[T]
+% % \raggedright
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{NOT VALID constraints}
+% \item Constraints can be added as NOT VALID
+% \item Existing data not checked initially
+% \item Validated later using VALIDATE CONSTRAINT
+% \item adding NOT NULL without downtime impact
+% \end{itemize}
+
+% % \vskip2ex
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% % \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% % \end{center}
+
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+
+% -- Add a NOT NULL constraint without full table scan:
+% ALTER TABLE orders
+% ADD CONSTRAINT orders_customer_not_null
+% NOT NULL (customer_id) NOT VALID;
+
+% -- Later, validate the constraint when convenient:
+% ALTER TABLE orders
+% VALIDATE CONSTRAINT orders_customer_not_null;
+
+
+% \end{lstlisting}
+% % \end{columns}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Constraints Improvements}
+% % \begin{columns}[T]
+% % \raggedright
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Temporal constraints}
+% \item WITHOUT OVERLAPS for temporal data integrity
+% \item No overlapping time periods in specified columns
+% \end{itemize}
+
+% % \vskip2ex
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% % \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% % \end{center}
+
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+% -- Table with a temporal primary key (id + valid period must be unique and non-
+% overlapping per id):
+% CREATE TABLE subscriptions (
+% sub_id INT,
+% valid_daterange TSRANGE,
+% PRIMARY KEY (sub_id, valid_daterange WITHOUT OVERLAPS));
+
+% -- Another table referencing the temporal key:
+% CREATE TABLE usage_logs (
+% sub_id INT,
+% use_period TSRANGE,
+% FOREIGN KEY (sub_id, PERIOD use_period)
+% REFERENCES subscriptions(sub_id, PERIOD valid_daterange));
+% \end{lstlisting}
+% % \end{columns}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Constraints Improvements}
+% % \begin{columns}[T]
+% % \raggedright
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Unique index with NULLS DISTINCT}
+% \item Allows unique indexes to treat NULLs as distinct
+% \item Improves data integrity for columns that can contain NULLs
+% \end{itemize}
+
+% % \vskip2ex
+% % \column{0.5\textwidth}
+% % \vspace{-10px}
+% % \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% % \end{center}
+
+% \begin{lstlisting}[frame=none, numbers=none, language=SQL,
+% keepspaces=true, aboveskip=5px,
+% basicstyle=\fontsize{8}{8}\selectfont\ttfamily]
+
+% -- Before: multiple NULLs were allowed in a UNIQUE column
+% CREATE TABLE users (
+% email TEXT UNIQUE -- (could have multiple NULL emails)
+% );
+% -- Now: disallow multiple NULLs by marking NULLs "not distinct"
+% CREATE TABLE accounts (
+% username TEXT UNIQUE,
+% email TEXT UNIQUE NULLS NOT DISTINCT -- only one NULL allowed
+% );
+
+% -- Create a unique index with NULLS NOT DISTINCT
+% CREATE UNIQUE INDEX users_email_idx ON users (email)
+% NULLS NOT DISTINCT;
+
+% \end{lstlisting}
+% % \end{columns}
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Operational \& Observability Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{Database Checksums enabled by default}
+% \item initdb enables data checksums by default
+% \item Can be disabled with --no-data-checksums
+% \item Improves data integrity and corruption detection
+
+% \bigskip
+% \item \textbf{Improved pg\_upgrade}
+% \item Planner statistics migrated automatically
+% \item ANALYZE after upgrade no longer needed
+% \item New --swap method to swap data directories
+% \item Parameter --jobs for parallel checks
+% \item Speeds up upgrade process significantly
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Backup Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item \textbf{pg\_dumpall improvements}
+% \item Can produce custom and directory format dumps
+% \item Speeds up full-cluster dumps significantly
+
+% \bigskip
+% \item \textbf{fine-grained dump options}
+% \item New options --with-data, --with-schema, --with-statistics
+% \item And --no-data, --no-schema, --no-statistics, --statistics-only
+% \item Sequence data dumps --sequence-data
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Performance Improvements}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \item Speed-up the processing of queries
+% \item Improved INTERSECT and EXCEPT operations
+% \item Enhanced performance of window aggregates
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}
+
+
+% % % -----------------------------------------------
+% % \begin{frame}[fragile]{Backup Improvements}
+% % \begin{columns}[T]
+% % \raggedright
+% % \column{0.7\textwidth}
+% % % \vspace{-10px}
+% % \begin{itemize}
+
+% % \end{itemize}
+
+% % \vskip2ex
+% % \column{0.3\textwidth}
+% % \vspace{-10px}
+% % \begin{center}
+% % % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% % \end{center}
+% % \end{columns}
+
+% % \end{frame}
+
+
+% % -----------------------------------------------
+% \begin{frame}[fragile]{Resources}
+% \begin{columns}[T]
+% \raggedright
+% \column{0.7\textwidth}
+% % \vspace{-10px}
+% \begin{itemize}
+% \fontsize{7}{7}\selectfont
+% \item \href{https://www.percona.com/blog/pgbouncer-for-postgresql-how-connection-pooling-solves-enterprise-slowdowns/}{\color{blue}{PgBouncer for PostgreSQL: How Connection Pooling Solves Enterprise Slowdowns}}
+% \end{itemize}
+
+% \vskip2ex
+% \column{0.3\textwidth}
+% \vspace{-10px}
+% \begin{center}
+% % \includegraphics[width=\textwidth]{logos/ales_svejk.png}
+
+% % \begin{imagedesccent}Images created by author\\using DeepDreamGenerator\\ \end{imagedesccent}
+% \end{center}
+% \end{columns}
+
+% \end{frame}

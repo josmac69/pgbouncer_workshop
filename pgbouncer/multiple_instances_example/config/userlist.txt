@@ -1,0 +1,8 @@
+; PgBouncer user list
+; Format: "username" "password"
+; Password can be in plain text or md5 format
+; For md5: md5 + md5(password + username)
+
+"pgbouncer" "md51234567890abcdef1234567890abcdef"
+"testuser" "md5abcdef1234567890abcdef1234567890"
+"postgres" "md5postgres_password_hash_here"
