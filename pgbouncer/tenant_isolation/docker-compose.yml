@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  pgbouncer:
+    build: .
+    ports:
+      - "6432:6432"
+      - "6433:6433"
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    depends_on:
+      - postgres

@@ -1,0 +1,19 @@
+[Unit]
+Description=A lightweight connection pooler for PostgreSQL (Instance %i)
+Documentation=man:pgbouncer(1)
+After=network.target auditd.service
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+# Ensure /var/run/pgbouncer exists
+RuntimeDirectory=pgbouncer
+# Path to the configuration file based on instance name
+ExecStart=/usr/sbin/pgbouncer /etc/pgbouncer/pgbouncer_%i.ini
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

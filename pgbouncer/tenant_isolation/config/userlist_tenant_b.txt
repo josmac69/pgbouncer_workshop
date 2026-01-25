@@ -1,0 +1,2 @@
+"admin_tenant_b" "admin_password_b"
+"user_b" "password_b"
