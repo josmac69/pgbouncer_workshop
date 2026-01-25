@@ -334,3 +334,42 @@ Environment="NO_PROXY=localhost,127.0.0.1"
 ## License
 
 This example is provided for educational purposes.
+
+## Life Testing and Real-Time Monitoring
+
+A Python script `life_test.py` is included to demonstrate the load balancing capabilities in real-time.
+
+### Prerequisites
+
+- Python 3
+- `pip`
+
+### Setup
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Ensure the environment is running:
+   ```bash
+   make up
+   ```
+
+### Running the Test
+
+Run the life test script:
+
+```bash
+python3 life_test.py
+```
+
+### What to Expect
+
+1. **Database Initialization**: The script will automatically create a `usage_logs` table in the `testdb` database if it doesn't exist.
+2. **Traffic Generation**: 20 concurrent client threads will start performing random `INSERT`, `UPDATE`, and `SELECT` operations via the main PgBouncer port (6432).
+3. **Real-Time Dashboard**: A terminal dashboard will appear, showing:
+   - The status of each PgBouncer instance (50001-50004).
+   - The number of active client connections handled by each instance.
+   
+You should see the client connections roughly balanced across the four instances, demonstrating the `SO_REUSEPORT` functionality.
