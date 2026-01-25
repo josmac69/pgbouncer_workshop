@@ -13,7 +13,7 @@ echo "even when connecting to multiple databases."
 echo ""
 
 # PgBouncer connection details
-PGBOUNCER_HOST="pgbouncer_cap"
+PGBOUNCER_HOST="localhost"
 PGBOUNCER_PORT="6432"
 USER="user1"
 PASSWORD="user1"
@@ -23,7 +23,7 @@ echo ""
 
 # Open 3 connections in the background and keep them alive
 for i in 1 2 3; do
-    PGPASSWORD=$PASSWORD psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U $USER -d testdb1 -c "SELECT 'Connection $i to testdb1' as status, pg_backend_pid() as pid;" &
+    PGPASSWORD=$PASSWORD psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U $USER -d testdb1 -c "SELECT 'Connection $i to testdb1' as status, pg_backend_pid() as pid, pg_sleep(10);" &
     PIDS[$i]=$!
     echo "  Opened connection $i (PID: ${PIDS[$i]})"
     sleep 1
@@ -32,7 +32,7 @@ done
 echo ""
 echo "Step 2: Checking PgBouncer pools..."
 echo ""
-docker exec pgbouncer_cap psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;" | grep user1 || echo "No user1 connections visible yet"
+PGPASSWORD=admin123 psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;" | grep user1 || echo "No user1 connections visible yet"
 
 echo ""
 echo "Step 3: Attempting to open 4th connection as user1 (should fail or queue)..."
@@ -47,7 +47,7 @@ PGPASSWORD=$PASSWORD timeout 5 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U $US
 echo ""
 echo "Step 4: Checking final pool status..."
 echo ""
-docker exec pgbouncer_cap psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS WHERE user='user1';"
+PGPASSWORD=admin123 psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;" | grep user1
 
 echo ""
 echo "Step 5: Cleaning up connections..."

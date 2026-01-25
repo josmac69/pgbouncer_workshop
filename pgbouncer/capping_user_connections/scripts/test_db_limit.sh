@@ -13,7 +13,7 @@ echo "can be made to a single database, regardless of user."
 echo ""
 
 # PgBouncer connection details
-PGBOUNCER_HOST="pgbouncer_cap"
+PGBOUNCER_HOST="localhost"
 PGBOUNCER_PORT="6432"
 
 echo "Step 1: Opening 5 connections to testdb1 from different users..."
@@ -23,7 +23,7 @@ declare -a PIDS
 
 # Open 2 connections as user1
 for i in 1 2; do
-    PGPASSWORD=user1 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user1 -d testdb1 -c "SELECT 'user1 connection $i' as status;" &
+    PGPASSWORD=user1 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user1 -d testdb1 -c "SELECT 'user1 connection $i' as status, pg_sleep(10);" &
     PIDS+=($!)
     echo "  Opened user1 connection $i"
     sleep 0.5
@@ -31,14 +31,14 @@ done
 
 # Open 2 connections as user2
 for i in 1 2; do
-    PGPASSWORD=user2 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user2 -d testdb1 -c "SELECT 'user2 connection $i' as status;" &
+    PGPASSWORD=user2 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user2 -d testdb1 -c "SELECT 'user2 connection $i' as status, pg_sleep(10);" &
     PIDS+=($!)
     echo "  Opened user2 connection $i"
     sleep 0.5
 done
 
 # Open 1 connection as user3
-PGPASSWORD=user3 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user3 -d testdb1 -c "SELECT 'user3 connection 1' as status;" &
+PGPASSWORD=user3 psql -h $PGBOUNCER_HOST -p $PGBOUNCER_PORT -U user3 -d testdb1 -c "SELECT 'user3 connection 1' as status, pg_sleep(10);" &
 PIDS+=($!)
 echo "  Opened user3 connection 1"
 sleep 1
@@ -46,7 +46,7 @@ sleep 1
 echo ""
 echo "Step 2: Checking PgBouncer pools for testdb1..."
 echo ""
-docker exec pgbouncer_cap psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS WHERE database='testdb1';"
+PGPASSWORD=admin123 psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;" | grep testdb1
 
 echo ""
 echo "Step 3: Attempting 6th connection to testdb1 (should fail or queue)..."

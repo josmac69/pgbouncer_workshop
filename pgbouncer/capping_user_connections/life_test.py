@@ -70,13 +70,28 @@ def worker_thread(user_idx, user_config, conn_idx):
                 cur.execute("SELECT 1")
                 connection_statuses[key] = "ACTIVE"
                 
-                # Keep connection open and active
-                while True:
+                # Keep connection open and active for a limited time
+                # to demonstrate queue draining as connections free up
+                start_time = time.time()
+                duration = random.uniform(10.0, 25.0)
+                
+                while time.time() - start_time < duration:
                     cur.execute("SELECT 1")
                     time.sleep(random.uniform(0.5, 2.0))
+            
+            # Connection finished its work
+            connection_statuses[key] = "DONE"
+            conn.close()
+            
         except Exception as e:
             connection_statuses[key] = "ERROR"
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
+            
+    except Exception as e:
+        connection_statuses[key] = "REJECTED"
             
     except Exception as e:
         connection_statuses[key] = "REJECTED"
@@ -105,8 +120,10 @@ def generate_table():
         status = connection_statuses[key]
         
         style = "green" if status == "ACTIVE" else "red"
-        if status == "CONNECTING":
+        if status == "CONNECTING" or status == "QUEUED":
             style = "yellow"
+        elif status == "DONE":
+            style = "dim white"
             
         table.add_row(user, db, idx, Text(status, style=style))
         
