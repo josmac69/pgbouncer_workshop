@@ -143,9 +143,14 @@ For a real-time visualization of connection capping in action, run the life test
 make life-test
 ```
 
-This script simulates multiple concurrent users and visualizes how PgBouncer enforces the configured limits:
-- **ACTIVE**: Connection established and query running
-- **QUEUED**: Connection accepted but waiting for a server slot (due to `max_user_connections`)
+This script simulates multiple concurrent users and visualizes how PgBouncer enforces the configured limits.
+
+**Visualizing Queue Draining:**
+- **ACTIVE** (Green): Connection established and query running (limit 3 per user).
+- **QUEUED** (Yellow): Connection accepted but waiting for a server slot.
+- **DONE** (Dim): Connection finished work and closed.
+
+The test simulates heavy load (15 connections). As **ACTIVE** connections finish (become **DONE**), you will see **QUEUED** connections automatically promote to **ACTIVE**, visually demonstrating how limits are enforced while ensuring all clients eventually get served.
 
 ![Connection Capping Dashboard](assets/capping_dashboard.png)
 
