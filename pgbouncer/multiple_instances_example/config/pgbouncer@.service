@@ -6,9 +6,10 @@ Requires=pgbouncer@%i.socket
 [Service]
 Type=notify
 User=postgres
+RuntimeDirectory=pgbouncer
 
 # Start PgBouncer with configuration file
-ExecStart=/usr/bin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+ExecStart=/usr/sbin/pgbouncer /etc/pgbouncer/pgbouncer.ini
 
 # Reload configuration on SIGHUP
 ExecReload=/bin/kill -HUP $MAINPID

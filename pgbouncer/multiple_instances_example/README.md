@@ -54,6 +54,8 @@ multiple_instances_example/
     ├── userlist.txt                # User authentication
     ├── pgbouncer@.socket           # Systemd socket unit template
     └── pgbouncer@.service          # Systemd service unit template
+├── life_test.py                    # Python script for life testing and monitoring
+├── requirements.txt                # Python dependencies for life_test.py
 ```
 
 ## Prerequisites
@@ -74,8 +76,8 @@ make up
 Or without Make:
 
 ```bash
-docker-compose build
-docker-compose up -d
+docker compose build
+docker compose up -d
 ```
 
 ### 2. Check Status
@@ -371,5 +373,22 @@ python3 life_test.py
 3. **Real-Time Dashboard**: A terminal dashboard will appear, showing:
    - The status of each PgBouncer instance (50001-50004).
    - The number of active client connections handled by each instance.
-   
+
 You should see the client connections roughly balanced across the four instances, demonstrating the `SO_REUSEPORT` functionality.
+
+### How the Test Works
+
+The `life_test.py` script performs the following actions:
+
+1.  **DB Setup**: Checks for `usage_logs` table existence and creates it if missing.
+2.  **Client Simulation**: Spawns **20 background threads**. Each thread:
+    - Opens a new connection to `localhost:6432` (the shared SO_REUSEPORT).
+    - Performs a random sequence of `INSERT`, `UPDATE`, or `SELECT` commands.
+    - Sleeps for random intervals to simulate realistic traffic.
+    - Disconnects and reconnects periodically.
+3.  **Monitoring Loop**: The main thread runs a loop that:
+    - Connects to the **Admin Port** of each instance (50001, 50002, 50003, 50004).
+    - Runs `SHOW CLIENTS;` to count active connections.
+    - Updates the console dashboard using the `rich` library.
+
+This demonstrates that while clients all connect to the *same* port (6432), the operating system's kernel distributes these connections to the different PgBouncer processes listening on that port.

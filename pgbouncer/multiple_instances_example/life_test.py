@@ -16,8 +16,8 @@ import sys
 DB_HOST = "localhost"
 DB_PORT = 6432  # Main PgBouncer port
 ADMIN_PORTS = [50001, 50002, 50003, 50004]
-DB_USER = "pgbouncer"  # Using pgbouncer user which is admin and has access
-DB_PASS = "pgbouncer"
+DB_USER = "postgres"
+DB_PASS = "postgres"
 TARGET_DB = "testdb"
 
 # Global state for monitoring
@@ -37,7 +37,7 @@ def get_connection(port=DB_PORT, dbname=TARGET_DB, user=DB_USER, password=DB_PAS
         # conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         return conn
     except Exception as e:
-        # console.print(f"[red]Connection failed to port {port}: {e}[/red]")
+        console.print(f"[red]Connection failed to port {port}: {e}[/red]")
         return None
 
 def setup_database():
