@@ -30,3 +30,6 @@ The `pgbouncer/` directory contains several self-contained examples demonstratin
 
 *   **[Database Proxying](pgbouncer/proxy_multiple_dbs/README.md)**
     Uses PgBouncer as a routing layer, mapping connection aliases (e.g., `db_alias_1`) to specific backend databases, simplifying client configuration and enforcing access boundaries.
+
+*   **[Tenant Isolation](pgbouncer/tenant_isolation/README.md)**
+    Demonstrates a dedicated PgBouncer per tenant architecture using systemd. This approach ensures strict isolation of authentication and configuration, preventing noisy neighbor issues and simplifying per-tenant resource limits.
