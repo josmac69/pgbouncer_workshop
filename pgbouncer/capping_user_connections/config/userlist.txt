@@ -5,17 +5,18 @@
 ; echo -n "admin123admin" | md5sum -> then prepend "md5"
 
 ; Admin user - full access to admin console
-"admin" "md532e12f215ba27cb750c9e093ce4b5127"
+; Admin user - full access to admin console
+"admin" "admin123"
 
 ; Monitor user - read-only stats access
-"monitor" "md54a47a15ebd1c89dde48ee3af93226f89"
+"monitor" "monitor"
 
 ; Test users for connection limit demonstration
 ; user1 - will be limited by max_user_connections (3)
-"user1" "md55cc04c2d6dceb5b7b0b3e8b7b7e5a6e8"
+"user1" "user1"
 
 ; user2 - will be limited by max_user_connections (3)
-"user2" "md5d93a5def7511da3d0f2d171d1d55a61c"
+"user2" "user2"
 
 ; user3 - another user for testing
-"user3" "md57d9b6c3d01e6e9f3e3a5e9f3e3a5e9f3"
+"user3" "user3"

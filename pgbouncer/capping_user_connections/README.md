@@ -135,6 +135,21 @@ View statistics:
 make stats
 ```
 
+## Life Testing (Visual Dashboard)
+
+For a real-time visualization of connection capping in action, run the life test dashboard:
+
+```bash
+make life-test
+```
+
+This script simulates multiple concurrent users and visualizes how PgBouncer enforces the configured limits:
+- **ACTIVE**: Connection established and query running
+- **QUEUED**: Connection accepted but waiting for a server slot (due to `max_user_connections`)
+
+![Connection Capping Dashboard](assets/capping_dashboard.png)
+
+
 ## Understanding the Limits
 
 ### max_user_connections

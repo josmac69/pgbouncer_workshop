@@ -47,4 +47,4 @@ EXPOSE 6432
 USER postgres
 
 # Start PgBouncer
-CMD ["/usr/bin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+CMD ["/usr/sbin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]

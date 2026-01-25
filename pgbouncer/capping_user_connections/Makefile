@@ -27,7 +27,7 @@ help:
 build:
 	@echo "Building Docker images..."
 	@echo "Note: If you encounter DNS errors, use: docker build --network=host -t capping_user_connections-pgbouncer ."
-	docker-compose build
+	docker compose build
 
 # Alternative build with host network
 build-host:
@@ -37,7 +37,7 @@ build-host:
 # Start all services
 up:
 	@echo "Starting services..."
-	docker-compose up -d
+	docker compose up -d
 	@echo "Waiting for services to be ready..."
 	@sleep 10
 	@echo "Services started!"
@@ -48,24 +48,24 @@ up:
 # Stop all services
 down:
 	@echo "Stopping services..."
-	docker-compose down
+	docker compose down
 
 # Show logs from all services
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 # Show logs from PgBouncer
 logs-pgbouncer:
-	docker-compose logs -f pgbouncer
+	docker compose logs -f pgbouncer
 
 # Show logs from PostgreSQL
 logs-postgres:
-	docker-compose logs -f postgres
+	docker compose logs -f postgres
 
 # Show PgBouncer pool status
 status:
 	@echo "PgBouncer Pool Status:"
-	@docker exec pgbouncer_cap psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;"
+	@docker exec -e PGPASSWORD=admin123 pgbouncer_cap psql -h localhost -p 6432 -U admin -d pgbouncer -c "SHOW POOLS;"
 
 # Show PgBouncer configuration
 config:
@@ -106,7 +106,7 @@ restart: down up
 # Clean everything
 clean:
 	@echo "Cleaning up..."
-	docker-compose down -v
+	docker compose down -v
 	docker rmi capping_user_connections-pgbouncer 2>/dev/null || true
 	@echo "Cleanup complete."
 
@@ -129,6 +129,14 @@ psql-admin:
 # Connect as user1 to testdb1 via PgBouncer
 psql-user1:
 	@docker exec -it pgbouncer_cap psql -h localhost -p 6432 -U user1 -d testdb1
+
+# Run visual life test dashboard
+life-test:
+	@echo "Setting up environment..."
+	@python3 -m venv venv
+	@./venv/bin/pip install -r requirements.txt > /dev/null
+	@echo "Starting life test..."
+	@./venv/bin/python3 life_test.py
 
 # Show PostgreSQL active connections
 pg-connections:
