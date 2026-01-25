@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pgbouncer_postgres_multi
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./config/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    build: .
+    image: multi_port-pgbouncer
+    container_name: pgbouncer_multi
+    ports:
+      - "6432:6432"
+      - "6433:6433"
+      - "6434:6434"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pgbouncer_network
+
+networks:
+  pgbouncer_network:
+    driver: bridge
+
