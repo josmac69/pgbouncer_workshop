@@ -18,8 +18,8 @@ DB_NAME = "pgbouncer"
 
 # Test scenarios
 TEST_USERS = [
-    {"user": "user1", "pass": "user1", "db": "testdb1", "limit": 3, "count": 5},  # User cap test
-    {"user": "user2", "pass": "user2", "db": "testdb1", "limit": 0, "count": 3},  # DB cap test contribution
+    {"user": "user1", "pass": "user1", "db": "testdb1", "limit": 3, "count": 15},  # User cap test
+    {"user": "user2", "pass": "user2", "db": "testdb1", "limit": 0, "count": 15},  # DB cap test contribution
 ]
 
 console = Console()
@@ -55,23 +55,31 @@ def worker_thread(user_idx, user_config, conn_idx):
             user=user,
             password=password,
             dbname=dbname,
-            connect_timeout=3
+            connect_timeout=5
         )
         conn.autocommit = True
-        connection_statuses[key] = "ACTIVE"
         
-        # Keep connection open
-        while True:
-            try:
-                with conn.cursor() as cur:
+        # Connection established but might be queued by PgBouncer
+        connection_statuses[key] = "QUEUED"
+        
+        # Try to run a query to confirm we are truly active
+        try:
+            with conn.cursor() as cur:
+                # Set a query timeout to detect if we are strictly queued for too long?
+                # Actually, blocking here IS the queued state.
+                cur.execute("SELECT 1")
+                connection_statuses[key] = "ACTIVE"
+                
+                # Keep connection open and active
+                while True:
                     cur.execute("SELECT 1")
                     time.sleep(random.uniform(0.5, 2.0))
-            except Exception:
-                break
-                
-        conn.close()
+        except Exception as e:
+            connection_statuses[key] = "ERROR"
+            conn.close()
+            
     except Exception as e:
-        connection_statuses[key] = "REJECTED/QUEUED"
+        connection_statuses[key] = "REJECTED"
 
 def start_load():
     for u_idx, u_conf in enumerate(TEST_USERS):
