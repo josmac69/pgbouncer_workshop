@@ -1,0 +1,18 @@
+[Unit]
+Description=PgBouncer Multi-Port Socket
+Documentation=man:pgbouncer(1)
+
+[Socket]
+# Listen on multiple ports
+ListenStream=6432
+ListenStream=6433
+ListenStream=6434
+
+# Optional: Bind to specific IP if needed
+# ListenStream=127.0.0.1:6432
+
+# Pass file descriptors to the service
+Service=pgbouncer-multiport.service
+
+[Install]
+WantedBy=sockets.target

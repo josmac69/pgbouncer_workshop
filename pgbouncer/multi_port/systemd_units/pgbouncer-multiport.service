@@ -1,0 +1,23 @@
+[Unit]
+Description=PgBouncer connection pooler (Multi-Port)
+Documentation=man:pgbouncer(1)
+After=network.target
+Requires=pgbouncer-multiport.socket
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+
+# Path to your config file
+ExecStart=/usr/sbin/pgbouncer /etc/pgbouncer/pgbouncer-multiport.ini
+
+# Sockets are passed via file descriptors, no need for -d (daemon) 
+# or explicit listen_port in config if relying solely on sockets.
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target
