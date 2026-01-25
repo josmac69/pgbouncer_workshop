@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pgbouncer_postgres_proxy
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./config/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - proxy_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+    networks:
+      pgbouncer_network:
+        ipv4_address: 172.28.0.2
+
+  pgbouncer:
+    build: .
+    image: proxy_multiple_dbs-pgbouncer
+    container_name: pgbouncer_proxy
+    ports:
+      - "6432:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pgbouncer_network
+
+networks:
+  pgbouncer_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  proxy_pg_data:

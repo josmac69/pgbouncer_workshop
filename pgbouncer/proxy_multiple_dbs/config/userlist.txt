@@ -1,0 +1,9 @@
+; Admin user
+"admin" "admin123"
+
+; Monitor user
+"monitor" "monitor"
+
+; Application users
+"user1" "user1"
+"user2" "user2"
