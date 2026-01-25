@@ -65,23 +65,23 @@ status:
 # Test connection to PgBouncer main port
 test-connection:
 	@echo "Testing connection to PgBouncer on main port 6432..."
-	@docker exec pgbouncer_postgres psql -h pgbouncer_multi -p 6432 -U postgres -d testdb -c "SELECT 'Connection successful via PgBouncer' as message;" || echo "Connection failed"
+	@docker exec -e PGPASSWORD=postgres pgbouncer_postgres psql -h pgbouncer_multi -p 6432 -U postgres -d testdb -c "SELECT 'Connection successful via PgBouncer' as message;" || echo "Connection failed"
 
 # Test admin connection to each instance
 test-admin:
 	@echo "Testing admin connections to each PgBouncer instance..."
 	@echo ""
 	@echo "Instance 50001:"
-	@docker exec pgbouncer_multi psql -h localhost -p 50001 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50001"
+	@docker exec -e PGPASSWORD=pgbouncer pgbouncer_multi psql -h localhost -p 50001 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50001"
 	@echo ""
 	@echo "Instance 50002:"
-	@docker exec pgbouncer_multi psql -h localhost -p 50002 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50002"
+	@docker exec -e PGPASSWORD=pgbouncer pgbouncer_multi psql -h localhost -p 50002 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50002"
 	@echo ""
 	@echo "Instance 50003:"
-	@docker exec pgbouncer_multi psql -h localhost -p 50003 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50003"
+	@docker exec -e PGPASSWORD=pgbouncer pgbouncer_multi psql -h localhost -p 50003 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50003"
 	@echo ""
 	@echo "Instance 50004:"
-	@docker exec pgbouncer_multi psql -h localhost -p 50004 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50004"
+	@docker exec -e PGPASSWORD=pgbouncer pgbouncer_multi psql -h localhost -p 50004 -U pgbouncer -d pgbouncer -c "SHOW POOLS;" || echo "Failed to connect to instance 50004"
 
 # Restart all services
 restart: down up

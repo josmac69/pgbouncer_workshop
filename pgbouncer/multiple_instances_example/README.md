@@ -374,6 +374,8 @@ python3 life_test.py
    - The status of each PgBouncer instance (50001-50004).
    - The number of active client connections handled by each instance.
 
+![Life Test Dashboard](assets/life_test_dashboard.png)
+
 You should see the client connections roughly balanced across the four instances, demonstrating the `SO_REUSEPORT` functionality.
 
 ### How the Test Works

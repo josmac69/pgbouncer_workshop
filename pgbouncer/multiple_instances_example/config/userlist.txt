@@ -3,6 +3,6 @@
 ; Password can be in plain text or md5 format
 ; For md5: md5 + md5(password + username)
 
-"pgbouncer" "md553d259c40212f451f476239105491750"
+"pgbouncer" "pgbouncer"
 "testuser" "md5abcdef1234567890abcdef1234567890"
 "postgres" "postgres"
